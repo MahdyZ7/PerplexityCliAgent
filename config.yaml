@@ -1,0 +1,13 @@
+# NL Bash Translator Configuration
+api:
+  url: "https://api.preplixity.com/v1/translate"
+  timeout: 30
+
+history:
+  enabled: true
+  file: "~/.bash_history"
+  max_entries: 1000
+
+display:
+  copy_to_clipboard: true
+  syntax_theme: "monokai"

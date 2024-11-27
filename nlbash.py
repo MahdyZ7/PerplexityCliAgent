@@ -5,6 +5,7 @@ from rich.prompt import Prompt
 from rich.syntax import Syntax
 import os
 from api import translate_to_bash
+from config import config
 from formatter import format_command
 from history import add_to_history
 
@@ -25,18 +26,19 @@ def cli(query, no_execute):
         # Format and display the command
         formatted_command = format_command(bash_command)
         console.print("\n[bold green]Generated Command:[/]")
-        console.print(Syntax(formatted_command, "bash", theme="monokai"))
+        console.print(Syntax(formatted_command, "bash", theme=config.get('display.syntax_theme', 'monokai')))
 
         # Add to history
         add_to_history(query, bash_command)
 
-        # Copy to clipboard functionality
-        try:
-            import pyperclip
-            pyperclip.copy(bash_command)
-            console.print("[dim](Command copied to clipboard)[/]")
-        except ImportError:
-            pass
+        # Copy to clipboard functionality if enabled in config
+        if config.get('display.copy_to_clipboard', True):
+            try:
+                import pyperclip
+                pyperclip.copy(bash_command)
+                console.print("[dim](Command copied to clipboard)[/]")
+            except ImportError:
+                pass
 
         if not no_execute:
             execute = Prompt.ask(

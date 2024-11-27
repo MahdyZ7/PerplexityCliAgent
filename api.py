@@ -1,7 +1,7 @@
 import requests
 from typing import Optional
+from config import config
 
-PREPLIXITY_API_URL = "https://api.preplixity.com/v1/translate"
 API_KEY = None  # Should be set via environment variable
 
 class TranslationError(Exception):
@@ -18,12 +18,13 @@ def translate_to_bash(query: str) -> str:
         
         # Example of how the actual API call would look:
         # response = requests.post(
-        #     PREPLIXITY_API_URL,
+        #     config.get('api.url'),
         #     headers={
         #         "Authorization": f"Bearer {API_KEY}",
         #         "Content-Type": "application/json"
         #     },
-        #     json={"query": query, "target": "bash"}
+        #     json={"query": query, "target": "bash"},
+        #     timeout=config.get('api.timeout', 30)
         # )
         # response.raise_for_status()
         # return response.json()["command"]
