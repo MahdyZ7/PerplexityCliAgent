@@ -32,13 +32,19 @@ def cli(query, no_execute):
         add_to_history(query, bash_command)
 
         # Copy to clipboard functionality if enabled in config
-        if config.get('display.copy_to_clipboard', True):
+        if config.get('display.copy_to_clipboard', False):
             try:
+                # Only import pyperclip if clipboard functionality is enabled
                 import pyperclip
-                pyperclip.copy(bash_command)
-                console.print("[dim](Command copied to clipboard)[/]")
+                try:
+                    pyperclip.copy(bash_command)
+                    console.print("[dim](Command copied to clipboard)[/]")
+                except pyperclip.PyperclipException as e:
+                    console.print("[yellow]Note: Clipboard functionality is enabled but system dependencies are missing.[/]")
+                    console.print("[dim]See config.yaml for installation instructions.[/]")
             except ImportError:
-                pass
+                console.print("[yellow]Note: Clipboard functionality requires pyperclip package.[/]")
+                console.print("[dim]Install with: pip install pyperclip[/]")
 
         if not no_execute:
             execute = Prompt.ask(

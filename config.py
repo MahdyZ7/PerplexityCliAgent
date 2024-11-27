@@ -14,7 +14,7 @@ DEFAULT_CONFIG = {
         "max_entries": 1000
     },
     "display": {
-        "copy_to_clipboard": True,
+        "copy_to_clipboard": False,
         "syntax_theme": "monokai"
     }
 }

@@ -1,13 +1,24 @@
 # NL Bash Translator Configuration
+
+# API settings for command translation
 api:
   url: "https://api.preplixity.com/v1/translate"
   timeout: 30
 
+# History tracking settings
 history:
   enabled: true
   file: "~/.bash_history"
   max_entries: 1000
 
+# Display and interface settings
 display:
-  copy_to_clipboard: true
+  # Clipboard functionality (requires system dependencies)
+  # To enable, set to true and install required dependencies:
+  # - Linux: sudo apt-get install xclip or xsel
+  # - Mac: pbcopy/pbpaste (pre-installed)
+  # - Windows: No additional dependencies needed
+  copy_to_clipboard: false
+  
+  # Syntax highlighting theme for command display
   syntax_theme: "monokai"
