@@ -1,47 +1,77 @@
+import os
 import requests
 from typing import Optional
 from config import config
 
-API_KEY = None  # Should be set via environment variable
+# Get API key from environment
+API_KEY = os.environ.get('PREPLIXITY_API_KEY')
 
 class TranslationError(Exception):
     """Custom exception for translation errors"""
     pass
 
+class APIAuthenticationError(TranslationError):
+    """Raised when API authentication fails"""
+    pass
+
+class APIRateLimitError(TranslationError):
+    """Raised when API rate limit is exceeded"""
+    pass
+
 def translate_to_bash(query: str) -> str:
     """
     Translate natural language query to bash command using Preplixity API
-    """
-    try:
-        # For demonstration, mocking the API response
-        # In production, this would make a real API call
+    
+    Args:
+        query: Natural language query to translate
         
-        # Example of how the actual API call would look:
-        # response = requests.post(
-        #     config.get('api.url'),
-        #     headers={
-        #         "Authorization": f"Bearer {API_KEY}",
-        #         "Content-Type": "application/json"
-        #     },
-        #     json={"query": query, "target": "bash"},
-        #     timeout=config.get('api.timeout', 30)
-        # )
-        # response.raise_for_status()
-        # return response.json()["command"]
-
-        # Mock response based on query
-        if "list" in query.lower() and "files" in query.lower():
-            return "ls -la"
-        elif "current directory" in query.lower():
-            return "pwd"
-        elif "disk space" in query.lower():
-            return "df -h"
-        else:
-            return "echo 'Command not recognized'"
-
+    Returns:
+        Translated bash command
+        
+    Raises:
+        TranslationError: If translation fails
+        APIAuthenticationError: If API authentication fails
+        APIRateLimitError: If API rate limit is exceeded
+    """
+    if not API_KEY:
+        raise APIAuthenticationError("API key not found in environment variables")
+    
+    try:
+        response = requests.post(
+            config.get('api.url'),
+            headers={
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "query": query,
+                "target": "bash"
+            },
+            timeout=config.get('api.timeout', 30)
+        )
+        
+        # Handle common HTTP errors
+        if response.status_code == 401:
+            raise APIAuthenticationError("Invalid API key or unauthorized access")
+        elif response.status_code == 429:
+            raise APIRateLimitError("API rate limit exceeded")
+        
+        response.raise_for_status()
+        
+        # Parse response
+        try:
+            result = response.json()
+            if "command" not in result:
+                raise TranslationError("Invalid API response: 'command' field missing")
+            return result["command"]
+        except ValueError as e:
+            raise TranslationError(f"Invalid JSON response from API: {str(e)}")
+            
+    except requests.exceptions.Timeout:
+        raise TranslationError("API request timed out")
+    except requests.exceptions.ConnectionError:
+        raise TranslationError("Could not connect to the API server")
     except requests.exceptions.RequestException as e:
         raise TranslationError(f"API request failed: {str(e)}")
-    except KeyError as e:
-        raise TranslationError(f"Invalid API response: {str(e)}")
     except Exception as e:
         raise TranslationError(f"Translation failed: {str(e)}")
