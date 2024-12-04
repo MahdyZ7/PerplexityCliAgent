@@ -20,21 +20,23 @@ class APIRateLimitError(TranslationError):
 
 def format_query(query: str) -> str:
     """Format the query for the API"""
-    return f"""GENERAL INSTRUCTIONS
-You are a Linux command-line expert. Your task is to translate a natural language query into a precise bash command.
+    return f"""You are an expert Linux command line interface specialist. Your task is to translate the following natural language query into a precise bash command.
 
 RULES:
-1. Return only the bash command without any explanations
-2. Format your response starting with 'command:' followed by the actual command
-3. Ensure the command is safe and follows best practices
-4. Use appropriate flags and options for better usability
-5. For destructive operations (delete, modify), add safeguards when possible
+1. Return ONLY the bash command without any explanations or additional text
+2. The command must be prefixed with 'command:' (e.g., 'command: ls -la')
+3. Focus on safety and best practices:
+   - Add safeguards for destructive operations
+   - Use appropriate flags for better usability
+   - Prefer modern command alternatives when available
+4. Keep commands concise but functional
+5. Do not include sudo unless explicitly requested
 
-USER QUESTION:
+USER QUERY:
 {query}
 
-ANSWER FORMAT:
-command:"""
+RESPONSE FORMAT:
+command: <the_command_here>"""
 
 def translate_to_bash(query: str) -> str:
     """
@@ -72,7 +74,7 @@ def translate_to_bash(query: str) -> str:
             "Authorization": f"Bearer {API_KEY}",
         }
         payload = {
-            "model": "mistral-7b-instruct",  # Using Mistral model for better command generation
+            "model": "mixtral-8x7b-instruct",  # Using Mixtral model for better command generation
             "messages": [{
                 "role": "system",
                 "content": "You are a Linux command-line expert that translates natural language to bash commands."
@@ -81,18 +83,40 @@ def translate_to_bash(query: str) -> str:
                 "content": format_query(query),
             }],
             "temperature": 0.1,  # Lower temperature for more deterministic outputs
-            "max_tokens": 100,   # Limit response length since we only need the command
+            "max_tokens": 150,   # Increased slightly to accommodate longer commands
+            "top_p": 0.9,       # Added for better response quality
+            "presence_penalty": 0.1,  # Slight penalty to avoid repetitive responses
         }
         timeout = config.get('api.timeout', 30)
         response = requests.post(url, json=payload, headers=header, timeout=timeout)
         
-        # Handle common HTTP errors
-        if response.status_code == 401:
-            raise APIAuthenticationError("Invalid API key or unauthorized access")
-        elif response.status_code == 429:
-            raise APIRateLimitError("API rate limit exceeded")
+        # Handle specific Perplexity API HTTP status codes
+        status_errors = {
+            400: "Bad request: Please check your query format",
+            401: "Invalid API key or unauthorized access",
+            403: "Access forbidden: Please check your API key permissions",
+            404: "API endpoint not found: Please check the API URL",
+            429: "API rate limit exceeded: Please try again later",
+            500: "Internal server error: Please try again later",
+            503: "Service unavailable: The API is temporarily down"
+        }
         
-        response.raise_for_status()
+        if response.status_code != 200:
+            error_message = status_errors.get(
+                response.status_code,
+                f"API request failed with status code: {response.status_code}"
+            )
+            
+            if response.status_code == 401:
+                raise APIAuthenticationError(error_message)
+            elif response.status_code == 429:
+                raise APIRateLimitError(error_message)
+            else:
+                raise TranslationError(error_message)
+                
+        # Ensure we have a valid JSON response
+        if not response.headers.get('content-type', '').startswith('application/json'):
+            raise TranslationError("Invalid response format: expected JSON")
         
         # Parse response
         try:
