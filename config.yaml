@@ -2,7 +2,7 @@
 
 # API settings for command translation
 api:
-  url: "https://api.preplixity.com/v1/translate"
+  url: "https://api.perplexity.ai/chat/completions"
   timeout: 30
 
 # History tracking settings

@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 DEFAULT_CONFIG = {
     "api": {
-        "url": "https://api.preplixity.com/v1/translate",
+        "url": "https://api.perplexity.ai/chat/completions",
         "timeout": 30
     },
     "history": {
