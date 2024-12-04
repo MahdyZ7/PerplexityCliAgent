@@ -65,8 +65,6 @@ def translate_to_bash(query: str) -> str:
         raise APIAuthenticationError(
             "API key not found. Please set the PREPLIXITY_API_KEY environment variable."
         )
-    if not API_KEY:
-        raise APIAuthenticationError("API key not found in environment variables")
     
     try:
         url = config.get('api.url', "https://api.perplexity.ai/chat/completions")
@@ -100,17 +98,21 @@ def translate_to_bash(query: str) -> str:
         try:
             result = response.json()
             
-            # Validate response structure
+            # Validate response structure according to Perplexity AI format
             if not isinstance(result, dict):
                 raise TranslationError("Invalid API response: expected JSON object")
                 
             choices = result.get("choices", [])
             if not choices or not isinstance(choices, list):
-                raise TranslationError("Invalid API response: missing or invalid 'choices' field")
+                raise TranslationError(f"Invalid API response: missing or invalid 'choices' field. Response: {result}")
                 
-            message = choices[0].get("message", {})
+            choice = choices[0]
+            if not isinstance(choice, dict):
+                raise TranslationError("Invalid API response: first choice is not an object")
+                
+            message = choice.get("message", {})
             if not isinstance(message, dict):
-                raise TranslationError("Invalid API response: invalid message format")
+                raise TranslationError("Invalid API response: message is not an object")
                 
             content = message.get("content", "").strip()
             if not content:
