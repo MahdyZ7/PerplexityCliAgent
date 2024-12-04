@@ -74,7 +74,7 @@ def translate_to_bash(query: str) -> str:
             "Authorization": f"Bearer {API_KEY}",
         }
         payload = {
-            "model": "mixtral-8x7b-instruct",  # Using Mixtral model for better command generation
+            "model": "llama-3.1-sonar-small-128k-chat",
             "messages": [{
                 "role": "system",
                 "content": "You are a Linux command-line expert that translates natural language to bash commands."
